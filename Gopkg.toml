@@ -1,0 +1,11 @@
+[prune]
+  go-tests = true
+  unused-packages = true
+
+[[constraint]]
+  name = "github.com/hashicorp/memberlist"
+  branch = "master"
+
+[[override]]
+  name = "github.com/golang/glog"
+  branch = "master"
