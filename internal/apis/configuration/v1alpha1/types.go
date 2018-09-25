@@ -179,13 +179,6 @@ type HTTP2 struct {
 // Global defines attributes used in NGINX
 type Global struct {
 
-	// Sets the ipv4 addresses on which the server will accept requests.
-	// +optional
-	BindAddressIpv4 []net.IPAddr `json:"bind-address-ipv4,omitempty"`
-	// Sets the ipv6 addresses on which the server will accept requests.
-	// +optional
-	BindAddressIpv6 []net.IPAddr `json:"bind-address-ipv6,omitempty"`
-
 	// CustomHTTPErrors enables which HTTP codes should be passed for processing with the error_page directive
 	// http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_intercept_errors
 	// http://nginx.org/en/docs/http/ngx_http_core_module.html#error_page
@@ -226,14 +219,6 @@ type Global struct {
 	// By default this is disabled
 	// +optional
 	EnableInfluxDB *bool `json:"enable-influxdb,omitempty"`
-
-	// EnableIPV6 disable listening on ipv6 address
-	// +optional
-	EnableIPV6 bool `json:"enable-ipv6,omitempty,omitempty"`
-
-	// EnableIPV6DNS disables IPv6 for nginx resolver
-	// +optional
-	EnableIPV6DNS bool `json:"enable-ipv6-dns,omitempty"`
 
 	// If disabled, a worker process will accept one new connection at a time.
 	// Otherwise, a worker process will accept all new connections at a time.
@@ -598,7 +583,7 @@ type SSL struct {
 	// http://nginx.org/en/docs/http/ngx_http_ssl_module.html#ssl_ecdh_curve
 	ECDHCurve *string `json:"ecdh-curve,omitempty"`
 
-	// The secret that contains Diffie-Hellman key to help with "Perfect Forward Secrecy"
+	// DHParam contains a base64 string with Diffie-Hellman key to help with "Perfect Forward Secrecy"
 	// https://wiki.openssl.org/index.php/Diffie-Hellman_parameters
 	// https://wiki.mozilla.org/Security/Server_Side_TLS#DHE_handshake_and_dhparam
 	// http://nginx.org/en/docs/http/ngx_http_ssl_module.html#ssl_dhparam
