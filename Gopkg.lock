@@ -367,7 +367,7 @@
   revision = "kubernetes-1.12.0-rc.2"
 
 [[projects]]
-  digest = "1:986f743b697a3f0c2749298d24586b98c38d2e409b3d0fa85aee26c5b3f90740"
+  digest = "1:b7b46570420b9cdddff43732e7ccfb9a9faa585ab2de084f3edac445794946c9"
   name = "k8s.io/client-go"
   packages = [
     "discovery",
@@ -422,6 +422,7 @@
     "tools/metrics",
     "tools/pager",
     "tools/reference",
+    "tools/watch",
     "transport",
     "util/buffer",
     "util/cert",
@@ -511,6 +512,7 @@
     "k8s.io/client-go/testing",
     "k8s.io/client-go/tools/cache",
     "k8s.io/client-go/tools/clientcmd",
+    "k8s.io/client-go/tools/watch",
     "k8s.io/client-go/util/flowcontrol",
     "k8s.io/code-generator/cmd/client-gen",
     "k8s.io/code-generator/cmd/conversion-gen",
