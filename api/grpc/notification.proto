@@ -1,0 +1,17 @@
+syntax = "proto3";
+package notification;
+
+import "google/protobuf/timestamp.proto";
+
+service notification {
+  rpc Subscribe(stream Client) returns (stream Update);
+}
+
+message Client { 
+  string pod_name = 1;
+  string pod_uuid = 2;
+}
+
+message Update { 
+  google.protobuf.Timestamp latest = 1;
+}
