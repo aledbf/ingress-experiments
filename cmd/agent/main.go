@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/aledbf/ingress-experiments/internal/pkg/agent"
 	"github.com/r3labs/sse"
 	"k8s.io/klog"
 )
@@ -25,36 +26,28 @@ func main() {
 
 	klog.Info("Starting SSE client...")
 
-	events := make(chan *sse.Event)
-	disconnection := make(chan *time.Time)
-
 	podName := fmt.Sprintf("agent-%v", time.Now().Nanosecond())
-	client := sse.NewClient(fmt.Sprintf("http://localhost:8080/events?pod_name=%v&pod_uuid=000001", podName))
-	client.SubscribeChan(eventChannel, events)
+	podUUID := "00001"
 
-	onDisconnect := func(c *sse.Client) {
-		t := time.Now()
-		disconnection <- &t
-		klog.Infof("Disconnected: %v\n", t)
+	closeCh := make(chan struct{})
+
+	callbacks := agent.ConnectionCallbacks{
+		OnDisconnect: func() {
+			klog.Infof("ondisconnect")
+		},
+		OnReconnect: func(secondsOffline float64) {
+			klog.Infof("Disconnected for %v seconds", secondsOffline)
+		},
+		OnData: func(event *sse.Event) {
+			klog.Infof("Event type: %s - Data: '%s'", event.Event, event.Data)
+		},
 	}
-	client.OnDisconnect(onDisconnect)
 
-	go func(events chan *sse.Event, disconnection chan *time.Time) {
-		var disconnectedSince *time.Time
+	agent.NewClient(podName, podUUID,
+		eventChannel,
+		"http://localhost:8080/events",
+		closeCh,
+		callbacks)
 
-		for {
-			select {
-			case event := <-events:
-				klog.Infof("Event type: %s - Data: '%s'", event.Event, event.Data)
-				if event.Data != nil && disconnectedSince != nil {
-					klog.Infof("Disconnected for %v seconds\n", time.Now().Sub(*disconnectedSince).Seconds())
-					disconnectedSince = nil
-				}
-			case t := <-disconnection:
-				disconnectedSince = t
-			}
-		}
-	}(events, disconnection)
-
-	time.Sleep(10 * time.Hour)
+	<-closeCh
 }

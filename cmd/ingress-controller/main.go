@@ -11,6 +11,8 @@ import (
 	"github.com/r3labs/sse"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/klog"
+
+	"github.com/aledbf/ingress-experiments/internal/pkg/agent"
 )
 
 const (
@@ -129,7 +131,7 @@ func (s *server) removeClient(podName, podUUID string) {
 	klog.Infof("Removing client: %v", podName)
 	delete(s.connectedClients, podName)
 
-	data, err := serialize(newOperation(RemoveEvent, podName))
+	data, err := serialize(agent.NewEvent(agent.RemoveAction, podName))
 	if err != nil {
 		return
 	}
@@ -156,7 +158,7 @@ func (s *server) addClient(podName, podUUID string) error {
 		UUID: podUUID,
 	}
 
-	data, err := serialize(newOperation(AddEvent, podName))
+	data, err := serialize(agent.NewEvent(agent.AddAction, podName))
 	if err != nil {
 		return err
 	}
@@ -167,25 +169,6 @@ func (s *server) addClient(podName, podUUID string) error {
 	})
 
 	return nil
-}
-
-type AgentEvent string
-
-var (
-	AddEvent    AgentEvent = "add"
-	RemoveEvent AgentEvent = "remove"
-)
-
-type AgentOperation struct {
-	Operation AgentEvent `json:"op"`
-	Agent     string     `json:"agent"`
-}
-
-func newOperation(op AgentEvent, agent string) *AgentOperation {
-	return &AgentOperation{
-		Operation: op,
-		Agent:     agent,
-	}
 }
 
 func serialize(data interface{}) ([]byte, error) {
