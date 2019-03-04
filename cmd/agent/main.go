@@ -2,37 +2,49 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"os"
-
-	"github.com/spf13/cobra"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/aledbf/ingress-experiments/internal/agent"
-	"github.com/aledbf/ingress-experiments/internal/signal"
-)
+	"github.com/aledbf/ingress-experiments/internal/common"
+	"k8s.io/klog"
 
-const (
-	ingressControllerURL = "ingress-controller-url"
-	certificate          = "certificate"
-	key                  = "key"
-	podIP                = "pod-ip"
-	podName              = "pod-name"
+	"github.com/spf13/cobra"
 )
 
 func main() {
-	var cfg agent.Configuration
+	klog.InitFlags(nil)
+
+	const (
+		ingressControllerURL = "ingress-controller-url"
+		certificate          = "certificate"
+		key                  = "key"
+		podIP                = "pod-ip"
+		podName              = "pod-name"
+	)
+
+	var cfg common.AgentConfiguration
 
 	runCommand := func(cmd *cobra.Command, args []string) {
-		fmt.Println("Starting NGINX ingress controller agent")
-		a := agent.NewInstance(&cfg)
+		a, err := agent.NewRunCommand(&cfg)
+		if err != nil {
+			klog.Errorf("Unexpected error starting the agent: %v", err)
+			os.Exit(1)
+		}
 
-		contextCtx := signal.SigTermCancelContext(context.Background())
+		klog.Info("Starting NGINX ingress controller")
+		contextCtx := sigTermCancelContext(context.Background())
 		if err := a.Run(contextCtx); err != nil {
-			fmt.Printf("Unexpected error starting the agent: %v", err)
+			klog.Errorf("Unexpected error starting the agent: %v", err)
 			os.Exit(1)
 		}
 
 		<-contextCtx.Done()
+
+		time.Sleep(common.ShutdownTimeout)
+		os.Exit(0)
 	}
 
 	rootCmd := &cobra.Command{
@@ -56,7 +68,25 @@ func main() {
 	rootCmd.PersistentFlags().BoolVarP(&cfg.Debug, "debug", "d", false, "Enable debug mode")
 
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
+		klog.Error(err)
 		os.Exit(1)
 	}
+}
+
+func sigTermCancelContext(ctx context.Context) context.Context {
+	term := make(chan os.Signal)
+	signal.Notify(term, os.Interrupt, syscall.SIGTERM)
+
+	ctx, cancel := context.WithCancel(ctx)
+
+	go func() {
+		select {
+		case <-term:
+			klog.Infof("Received SIGTERM, cancelling")
+			cancel()
+		case <-ctx.Done():
+		}
+	}()
+
+	return ctx
 }

@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"k8s.io/klog"
 
 	"github.com/aledbf/ingress-experiments/internal/server"
 	"github.com/aledbf/ingress-experiments/internal/signal"
@@ -20,6 +21,8 @@ const (
 )
 
 func main() {
+	klog.InitFlags(nil)
+
 	var cfg server.Configuration
 
 	runCommand := func(cmd *cobra.Command, args []string) {

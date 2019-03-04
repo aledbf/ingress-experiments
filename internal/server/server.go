@@ -8,11 +8,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/gorilla/websocket"
-	"github.com/k8s.io/kubernetes/pkg/healthz"
+	"github.com/kong/kubernetes-ingress-controller/version"
 	"k8s.io/klog"
-
-	"github.com/aledbf/ingress-experiments/internal/version"
 )
 
 type Configuration struct {
@@ -42,24 +39,22 @@ type Runtime struct {
 	cfg *Configuration
 
 	ctx context.Context
-
-	hub *Hub
 }
 
 func NewInstance(cfg *Configuration) *Runtime {
-	return &Runtime{
+	r := &Runtime{
 		cfg: cfg,
-		hub: newHub(),
 	}
+
+	return r
 }
 
 func (r *Runtime) Run(ctx context.Context) error {
 	mux := http.NewServeMux()
 	registerHealthz(mux)
-	registerHandlers(r.hub, mux)
+	registerHandlers(mux)
 
 	go startHTTPServer(r.cfg.ListenPort, mux)
-	go r.hub.run()
 
 	go func() {
 		for {
@@ -72,29 +67,6 @@ func (r *Runtime) Run(ctx context.Context) error {
 }
 
 func (r *Runtime) stop() {}
-
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-}
-
-func serveWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
-	conn, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		klog.Errorf("Unexpected error upgrading request: %v", err)
-		return
-	}
-
-	agent := &Agent{
-		hub:  hub,
-		conn: conn,
-		send: make(chan []byte, 256),
-	}
-	agent.hub.register <- agent
-
-	go agent.writePump()
-	go agent.readPump()
-}
 
 func startHTTPServer(port int, mux *http.ServeMux) {
 	server := &http.Server{
@@ -121,7 +93,7 @@ func registerProfiler(mux *http.ServeMux) {
 	mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
 }
 
-func registerHandlers(hub *Hub, mux *http.ServeMux) {
+func registerHandlers(mux *http.ServeMux) {
 	mux.HandleFunc("/build", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(version.String()))
@@ -135,14 +107,12 @@ func registerHandlers(hub *Hub, mux *http.ServeMux) {
 			klog.Errorf("Unexpected error: %v", err)
 		}
 	})
-
-	mux.HandleFunc("/ws/v1", func(w http.ResponseWriter, r *http.Request) {
-		serveWs(hub, w, r)
-	})
 }
 
 func registerHealthz(mux *http.ServeMux) {
-	healthz.InstallHandler(mux,
-		healthz.PingHealthz,
-	)
+	/*
+		healthz.InstallHandler(mux,
+			healthz.PingHealthz,
+		)
+	*/
 }
