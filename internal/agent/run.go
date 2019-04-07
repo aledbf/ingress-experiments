@@ -52,11 +52,11 @@ func (cmd *Instance) checkForUpdates() {
 }
 
 func (cmd *Instance) process(ctx context.Context) {
-	timeChan := time.NewTimer(common.CheckInterval).C
+	tick := time.Tick(common.CheckInterval)
 
 	for {
 		select {
-		case <-timeChan:
+		case <-tick:
 			klog.Info("check")
 			cmd.checkForUpdates()
 		case <-ctx.Done():
