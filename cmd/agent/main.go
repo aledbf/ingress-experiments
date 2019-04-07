@@ -27,7 +27,7 @@ func main() {
 	var cfg common.AgentConfiguration
 
 	runCommand := func(cmd *cobra.Command, args []string) {
-		a, err := agent.NewRunCommand(&cfg)
+		a, err := agent.New(&cfg)
 		if err != nil {
 			klog.Errorf("Unexpected error starting the agent: %v", err)
 			os.Exit(1)

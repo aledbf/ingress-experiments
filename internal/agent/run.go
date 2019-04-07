@@ -12,24 +12,24 @@ import (
 	"github.com/aledbf/ingress-experiments/internal/nginx"
 )
 
-type RunCommand struct {
+type Instance struct {
 	cfg *common.AgentConfiguration
 
 	ngx *nginx.NGINX
 }
 
-func NewRunCommand(cfg *common.AgentConfiguration) (*RunCommand, error) {
+func New(cfg *common.AgentConfiguration) (*Instance, error) {
 	_, err := url.ParseRequestURI(cfg.ServerURL)
 	if err != nil {
 		return nil, err
 	}
 
-	return &RunCommand{
+	return &Instance{
 		cfg: cfg,
 	}, nil
 }
 
-func (cmd *RunCommand) checkForUpdates() {
+func (cmd *Instance) checkForUpdates() {
 	update, ok := network.RequestConfiguration(cmd.cfg)
 	if !ok {
 		return
@@ -46,21 +46,23 @@ func (cmd *RunCommand) checkForUpdates() {
 	}
 }
 
-func (cmd *RunCommand) process(ctx context.Context) {
+func (cmd *Instance) process(ctx context.Context) {
 	timeChan := time.NewTimer(common.CheckInterval).C
 
 	for {
 		select {
 		case <-timeChan:
+			klog.Info("check")
 			cmd.checkForUpdates()
 		case <-ctx.Done():
+			klog.Info("done")
 			return
 		}
 	}
 }
 
 /*
-func (cmd *RunCommand) serveMetrics(mux *http.ServeMux) {
+func (cmd *Instance) serveMetrics(mux *http.ServeMux) {
 	registry := prometheus.NewRegistry()
 	// Metrics about API connections
 	registry.MustRegister(cmd.networkRequestStatusesCollector)
@@ -76,7 +78,7 @@ func (cmd *RunCommand) serveMetrics(mux *http.ServeMux) {
 }
 */
 
-func (cmd *RunCommand) Run(ctx context.Context) error {
+func (cmd *Instance) Run(ctx context.Context) error {
 	// start nginx
 	go cmd.ngx.Start()
 

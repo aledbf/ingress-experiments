@@ -27,15 +27,13 @@ type Configuration struct {
 /*
 
 TODO:
-  - health-check
   - restart connection
   - act on changes
   - send status periodically
-  -
 
 */
 
-type Runtime struct {
+type Instance struct {
 	cfg *Configuration
 
 	ctx context.Context
@@ -43,22 +41,22 @@ type Runtime struct {
 	server *http.Server
 }
 
-func NewInstance(cfg *Configuration) *Runtime {
-	r := &Runtime{
+func New(cfg *Configuration) *Instance {
+	r := &Instance{
 		cfg: cfg,
 	}
 
 	return r
 }
 
-func (r *Runtime) Run(ctx context.Context) error {
+func (r *Instance) Run(ctx context.Context) error {
 	mux := http.NewServeMux()
 	registerHealthz(mux)
 	registerHandlers(mux)
 
 	server := newHTTPServer(r.cfg.ListenPort, mux)
 	go func() {
-		klog.Fatal(server.ListenAndServe())
+		klog.Fatal(server.ListenAndServeTLS(r.cfg.Certificate, r.cfg.Key))
 	}()
 	r.server = server
 
@@ -72,7 +70,7 @@ func (r *Runtime) Run(ctx context.Context) error {
 	return nil
 }
 
-func (r *Runtime) Stop() {
+func (r *Instance) Stop() {
 	err := r.server.Shutdown(context.Background())
 	if err != nil {
 		klog.Warningf("Unexpected error stopping HTTP server: %v", err)
@@ -107,7 +105,7 @@ func registerHandlers(mux *http.ServeMux) {
 	mux.HandleFunc("/build", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		//w.Write([]byte(version.String()))
-		w.Write([]byte("0.0"))
+		w.Write([]byte("0.0.0"))
 	})
 
 	mux.HandleFunc("/stop", func(w http.ResponseWriter, r *http.Request) {

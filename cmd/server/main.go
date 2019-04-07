@@ -28,7 +28,7 @@ func main() {
 
 	runCommand := func(cmd *cobra.Command, args []string) {
 		fmt.Println("Starting NGINX ingress controller")
-		a := server.NewInstance(&cfg)
+		a := server.New(&cfg)
 
 		contextCtx := signal.SigTermCancelContext(context.Background())
 		if err := a.Run(contextCtx); err != nil {
@@ -51,7 +51,6 @@ func main() {
 	}
 
 	rootCmd.Flags().IntVarP(&cfg.ListenPort, listenPort, "", 10254, "URL of the NGINX ingress controller")
-	rootCmd.MarkFlagRequired(listenPort)
 
 	rootCmd.Flags().StringVarP(&cfg.Certificate, certificate, "", "", "TLS certificate fot mTLS")
 	rootCmd.MarkFlagRequired(certificate)
