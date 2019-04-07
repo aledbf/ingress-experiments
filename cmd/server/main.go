@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/spf13/cobra"
 	"k8s.io/klog"
@@ -35,11 +36,11 @@ func main() {
 			os.Exit(1)
 		}
 
-		fmt.Println("here")
 		<-contextCtx.Done()
 
-		//a.Stop()
+		a.Stop()
 
+		time.Sleep(30 * time.Second)
 		os.Exit(0)
 	}
 

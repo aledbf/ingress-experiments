@@ -3,15 +3,14 @@ package main
 import (
 	"context"
 	"os"
-	"os/signal"
-	"syscall"
 	"time"
+
+	"github.com/spf13/cobra"
+	"k8s.io/klog"
 
 	"github.com/aledbf/ingress-experiments/internal/agent"
 	"github.com/aledbf/ingress-experiments/internal/common"
-	"k8s.io/klog"
-
-	"github.com/spf13/cobra"
+	"github.com/aledbf/ingress-experiments/internal/signal"
 )
 
 func main() {
@@ -35,7 +34,7 @@ func main() {
 		}
 
 		klog.Info("Starting NGINX ingress controller")
-		contextCtx := sigTermCancelContext(context.Background())
+		contextCtx := signal.SigTermCancelContext(context.Background())
 		if err := a.Run(contextCtx); err != nil {
 			klog.Errorf("Unexpected error starting the agent: %v", err)
 			os.Exit(1)
@@ -71,22 +70,4 @@ func main() {
 		klog.Error(err)
 		os.Exit(1)
 	}
-}
-
-func sigTermCancelContext(ctx context.Context) context.Context {
-	term := make(chan os.Signal)
-	signal.Notify(term, os.Interrupt, syscall.SIGTERM)
-
-	ctx, cancel := context.WithCancel(ctx)
-
-	go func() {
-		select {
-		case <-term:
-			klog.Infof("Received SIGTERM, cancelling")
-			cancel()
-		case <-ctx.Done():
-		}
-	}()
-
-	return ctx
 }

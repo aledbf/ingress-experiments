@@ -44,8 +44,6 @@ func (cmd *RunCommand) checkForUpdates() {
 	if err != nil {
 		klog.Errorf("Unexpected error updating configuration: %v", err)
 	}
-
-	// send update result
 }
 
 func (cmd *RunCommand) process(ctx context.Context) {

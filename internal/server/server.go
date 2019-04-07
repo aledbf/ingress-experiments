@@ -8,7 +8,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/kong/kubernetes-ingress-controller/version"
+	"k8s.io/apiserver/pkg/server/healthz"
 	"k8s.io/klog"
 )
 
@@ -39,6 +39,8 @@ type Runtime struct {
 	cfg *Configuration
 
 	ctx context.Context
+
+	server *http.Server
 }
 
 func NewInstance(cfg *Configuration) *Runtime {
@@ -54,7 +56,11 @@ func (r *Runtime) Run(ctx context.Context) error {
 	registerHealthz(mux)
 	registerHandlers(mux)
 
-	go startHTTPServer(r.cfg.ListenPort, mux)
+	server := newHTTPServer(r.cfg.ListenPort, mux)
+	go func() {
+		klog.Fatal(server.ListenAndServe())
+	}()
+	r.server = server
 
 	go func() {
 		for {
@@ -66,10 +72,15 @@ func (r *Runtime) Run(ctx context.Context) error {
 	return nil
 }
 
-func (r *Runtime) stop() {}
+func (r *Runtime) Stop() {
+	err := r.server.Shutdown(context.Background())
+	if err != nil {
+		klog.Warningf("Unexpected error stopping HTTP server: %v", err)
+	}
+}
 
-func startHTTPServer(port int, mux *http.ServeMux) {
-	server := &http.Server{
+func newHTTPServer(port int, mux *http.ServeMux) *http.Server {
+	return &http.Server{
 		Addr:              fmt.Sprintf(":%v", port),
 		Handler:           mux,
 		ReadTimeout:       10 * time.Second,
@@ -77,7 +88,6 @@ func startHTTPServer(port int, mux *http.ServeMux) {
 		WriteTimeout:      300 * time.Second,
 		IdleTimeout:       120 * time.Second,
 	}
-	klog.Fatal(server.ListenAndServe())
 }
 
 func registerProfiler(mux *http.ServeMux) {
@@ -96,7 +106,8 @@ func registerProfiler(mux *http.ServeMux) {
 func registerHandlers(mux *http.ServeMux) {
 	mux.HandleFunc("/build", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(version.String()))
+		//w.Write([]byte(version.String()))
+		w.Write([]byte("0.0"))
 	})
 
 	mux.HandleFunc("/stop", func(w http.ResponseWriter, r *http.Request) {
@@ -110,9 +121,7 @@ func registerHandlers(mux *http.ServeMux) {
 }
 
 func registerHealthz(mux *http.ServeMux) {
-	/*
-		healthz.InstallHandler(mux,
-			healthz.PingHealthz,
-		)
-	*/
+	healthz.InstallHandler(mux,
+		healthz.PingHealthz,
+	)
 }
