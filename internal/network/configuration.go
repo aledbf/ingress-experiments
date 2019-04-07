@@ -28,7 +28,7 @@ func RequestConfiguration(clientCfg *common.AgentConfiguration) (*nginx.Configur
 
 	var response nginx.Configuration
 
-	result, _, err := newUpdateRequest(clientCfg.ServerURL, clientCfg.Certificate, request)
+	result, _, err := newUpdateRequest(clientCfg.ServerURL, clientCfg.Certificate, clientCfg.Key, request)
 	if err != nil {
 		klog.Error(err)
 		return nil, false
@@ -48,8 +48,8 @@ func RequestConfiguration(clientCfg *common.AgentConfiguration) (*nginx.Configur
 	}
 }
 
-func newUpdateRequest(serverURL, cert string, data interface{}) (int, []byte, error) {
-	caCert, err := ioutil.ReadFile("cert.pem")
+func newUpdateRequest(serverURL, cert, key string, data interface{}) (int, []byte, error) {
+	caCert, err := ioutil.ReadFile(cert)
 	if err != nil {
 		return -1, nil, err
 	}
@@ -57,10 +57,16 @@ func newUpdateRequest(serverURL, cert string, data interface{}) (int, []byte, er
 	caCertPool := x509.NewCertPool()
 	caCertPool.AppendCertsFromPEM(caCert)
 
+	certificate, err := tls.LoadX509KeyPair(cert, key)
+	if err != nil {
+		return -1, nil, err
+	}
+
 	client := &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
-				RootCAs: caCertPool,
+				RootCAs:      caCertPool,
+				Certificates: []tls.Certificate{certificate},
 			},
 		},
 	}

@@ -2,7 +2,10 @@ package server
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/pprof"
 	"syscall"
@@ -54,7 +57,9 @@ func (r *Instance) Run(ctx context.Context) error {
 	registerHealthz(mux)
 	registerHandlers(mux)
 
-	server := newHTTPServer(r.cfg.ListenPort, mux)
+	registerIngressController(mux)
+
+	server := newHTTPServer(r.cfg.Certificate, r.cfg.Key, r.cfg.ListenPort, mux)
 	go func() {
 		klog.Fatal(server.ListenAndServeTLS(r.cfg.Certificate, r.cfg.Key))
 	}()
@@ -77,7 +82,21 @@ func (r *Instance) Stop() {
 	}
 }
 
-func newHTTPServer(port int, mux *http.ServeMux) *http.Server {
+func newHTTPServer(cert, key string, port int, mux *http.ServeMux) *http.Server {
+	caCert, err := ioutil.ReadFile(cert)
+	if err != nil {
+		klog.Fatal(err)
+	}
+
+	caCertPool := x509.NewCertPool()
+	caCertPool.AppendCertsFromPEM(caCert)
+
+	tlsConfig := &tls.Config{
+		ClientCAs:  caCertPool,
+		ClientAuth: tls.RequireAndVerifyClientCert,
+	}
+	tlsConfig.BuildNameToCertificate()
+
 	return &http.Server{
 		Addr:              fmt.Sprintf(":%v", port),
 		Handler:           mux,
@@ -85,6 +104,7 @@ func newHTTPServer(port int, mux *http.ServeMux) *http.Server {
 		ReadHeaderTimeout: 10 * time.Second,
 		WriteTimeout:      300 * time.Second,
 		IdleTimeout:       120 * time.Second,
+		TLSConfig:         tlsConfig,
 	}
 }
 
@@ -122,4 +142,11 @@ func registerHealthz(mux *http.ServeMux) {
 	healthz.InstallHandler(mux,
 		healthz.PingHealthz,
 	)
+}
+
+func registerIngressController(mux *http.ServeMux) {
+	mux.HandleFunc("/v1/check-update", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("{}"))
+	})
 }

@@ -35,6 +35,11 @@ func (cmd *Instance) checkForUpdates() {
 		return
 	}
 
+	if update == nil {
+		klog.Errorf("Update invalido")
+		return
+	}
+
 	klog.Infof("Update received: cfg -> (%v) - lua -> (%v) - ssl -> (%v)",
 		update.Configuration != nil,
 		update.LUA != nil,
