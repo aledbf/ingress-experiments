@@ -34,10 +34,8 @@ func RequestConfiguration(clientCfg *common.AgentConfiguration) (*nginx.Configur
 		return nil, false
 	}
 
-	klog.Infof("Checking for jobs (%v)", http.StatusCreated)
-
 	switch result {
-	case http.StatusCreated:
+	case http.StatusOK:
 		return &response, true
 	case http.StatusForbidden:
 		return nil, false
