@@ -42,8 +42,8 @@ func NewClient(podName, podUUID, channel, url string, closeCh chan struct{}, cal
 			select {
 			case event := <-events:
 				if event.Data != nil && disconnectedSince != nil {
-					disconnectedSince = nil
 					callbacks.OnReconnect(time.Now().Sub(*disconnectedSince).Seconds())
+					disconnectedSince = nil
 				}
 				callbacks.OnData(event)
 			case t := <-disconnection:
