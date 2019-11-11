@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/cenkalti/backoff"
 	"github.com/r3labs/sse"
 )
 
@@ -27,6 +28,7 @@ func NewClient(podName, podUUID, channel, url string, closeCh chan struct{}, cal
 	disconnection := make(chan *time.Time)
 	client := sse.NewClient(fmt.Sprintf("%v?pod_name=%v&pod_uuid=%v", url, podName, podUUID))
 	client.SubscribeChan(channel, events)
+	client.ReconnectStrategy = backoff.NewConstantBackOff(2 * time.Second)
 
 	onDisconnect := func(c *sse.Client) {
 		t := time.Now()
@@ -45,7 +47,11 @@ func NewClient(podName, podUUID, channel, url string, closeCh chan struct{}, cal
 					callbacks.OnReconnect(time.Now().Sub(*disconnectedSince).Seconds())
 					disconnectedSince = nil
 				}
-				callbacks.OnData(event)
+
+				if len(event.Data) > 1 {
+					callbacks.OnData(event)
+				}
+
 			case t := <-disconnection:
 				disconnectedSince = t
 			case <-closeCh:
