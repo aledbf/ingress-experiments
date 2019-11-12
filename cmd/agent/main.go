@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"math/rand"
 	"os"
 	"time"
 
@@ -19,8 +18,6 @@ const (
 )
 
 func main() {
-	rand.Seed(time.Now().UTC().UnixNano())
-
 	klog.InitFlags(nil)
 	defer klog.Flush()
 
@@ -46,10 +43,10 @@ func main() {
 
 	ctx := signal.SetupSignalHandler(context.Background())
 
-	agent.NewClient(podName, podUUID,
+	agent.NewClient(ctx,
+		podName, podUUID,
 		eventChannel,
 		"http://localhost:8080/events",
-		ctx,
 		callbacks)
 
 	<-ctx.Done()

@@ -35,7 +35,7 @@ func newSSEServer() *server {
 	return &server{
 		Server:           sseServer,
 		mutex:            &sync.Mutex{},
-		connectedClients: make(map[string]*ClientInfo, 0),
+		connectedClients: make(map[string]*ClientInfo),
 	}
 }
 
@@ -45,20 +45,20 @@ func (s *server) clientInformation(h http.HandlerFunc) http.HandlerFunc {
 
 		podName := r.URL.Query().Get("pod_name")
 		if podName == "" {
-			http.Error(w, "Query variable pod_name missing", 403)
+			http.Error(w, "Query variable pod_name missing", http.StatusForbidden)
 			return
 		}
 
 		podUUID := r.URL.Query().Get("pod_uuid")
 		if podUUID == "" {
-			http.Error(w, "Query variable pod_uuid missing", 403)
+			http.Error(w, "Query variable pod_uuid missing", http.StatusForbidden)
 			return
 		}
 
 		// validate the pod should be allowed to connect to the event stream
 		err := s.addClient(podName, podUUID)
 		if err != nil {
-			http.Error(w, "Invalid client information", 403)
+			http.Error(w, "Invalid client information", http.StatusForbidden)
 			return
 		}
 
@@ -94,7 +94,7 @@ func (s *server) addClient(podName, podUUID string) error {
 	defer s.mutex.Unlock()
 
 	if _, ok := s.connectedClients[podName]; ok {
-		return fmt.Errorf("Client %v is already connected", podName)
+		return fmt.Errorf("client %v is already connected", podName)
 	}
 
 	// TODO: validate podName and podUUID are allowed to connect.
