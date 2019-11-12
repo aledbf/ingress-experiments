@@ -21,19 +21,19 @@ type ClientInfo struct {
 }
 
 type server struct {
-	sseServer *sse.Server
+	*sse.Server
 
 	mutex            *sync.Mutex
 	connectedClients map[string]*ClientInfo
 }
 
-func newServer() *server {
+func newSSEServer() *server {
 	sseServer := sse.New()
 	sseServer.AutoReplay = false
 	sseServer.CreateStream(eventChannel)
 
 	return &server{
-		sseServer:        sseServer,
+		Server:           sseServer,
 		mutex:            &sync.Mutex{},
 		connectedClients: make(map[string]*ClientInfo, 0),
 	}
@@ -83,7 +83,7 @@ func (s *server) removeClient(podName, podUUID string) {
 		return
 	}
 
-	s.sseServer.Publish(eventChannel, &sse.Event{
+	s.Publish(eventChannel, &sse.Event{
 		Event: []byte("agent"),
 		Data:  data,
 	})
@@ -110,7 +110,7 @@ func (s *server) addClient(podName, podUUID string) error {
 		return err
 	}
 
-	s.sseServer.Publish(eventChannel, &sse.Event{
+	s.Publish(eventChannel, &sse.Event{
 		Event: []byte("agent"),
 		Data:  data,
 	})

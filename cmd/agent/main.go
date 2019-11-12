@@ -1,12 +1,15 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"math/rand"
+	"os"
 	"time"
 
 	"github.com/aledbf/ingress-experiments/internal/pkg/agent"
+	"github.com/aledbf/ingress-experiments/internal/pkg/signal"
 	"github.com/r3labs/sse"
 	"k8s.io/klog"
 )
@@ -29,8 +32,6 @@ func main() {
 	podName := fmt.Sprintf("agent-%v", time.Now().Nanosecond())
 	podUUID := "00001"
 
-	closeCh := make(chan struct{})
-
 	callbacks := agent.ConnectionCallbacks{
 		OnDisconnect: func() {
 			klog.Infof("ondisconnect")
@@ -43,11 +44,16 @@ func main() {
 		},
 	}
 
+	ctx := signal.SetupSignalHandler(context.Background())
+
 	agent.NewClient(podName, podUUID,
 		eventChannel,
 		"http://localhost:8080/events",
-		closeCh,
+		ctx,
 		callbacks)
 
-	<-closeCh
+	<-ctx.Done()
+
+	time.Sleep(10 * time.Second)
+	os.Exit(0)
 }
