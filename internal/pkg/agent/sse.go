@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -23,7 +24,7 @@ type ConnectionCallbacks struct {
 }
 
 // NewClient createa a new SSE connection to the ingress controller listening
-func NewClient(podName, podUUID, channel, url string, closeCh chan struct{}, callbacks ConnectionCallbacks) *sse.Client {
+func NewClient(podName, podUUID, channel, url string, ctx context.Context, callbacks ConnectionCallbacks) *sse.Client {
 	events := make(chan *sse.Event)
 	disconnection := make(chan *time.Time)
 	client := sse.NewClient(fmt.Sprintf("%v?pod_name=%v&pod_uuid=%v", url, podName, podUUID))
@@ -54,7 +55,7 @@ func NewClient(podName, podUUID, channel, url string, closeCh chan struct{}, cal
 
 			case t := <-disconnection:
 				disconnectedSince = t
-			case <-closeCh:
+			case <-ctx.Done():
 				client.Unsubscribe(events)
 				break
 			}
