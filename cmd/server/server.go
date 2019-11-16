@@ -78,7 +78,7 @@ func (s *server) removeClient(podName, podUUID string) {
 	klog.Infof("Removing client: %v", podName)
 	delete(s.connectedClients, podName)
 
-	data, err := serialize(agent.NewEvent(agent.RemoveAction, podName))
+	data, err := serialize(agent.NewEvent(agent.RemoveOperation, podName))
 	if err != nil {
 		return
 	}
@@ -105,7 +105,7 @@ func (s *server) addClient(podName, podUUID string) error {
 		UUID: podUUID,
 	}
 
-	data, err := serialize(agent.NewEvent(agent.AddAction, podName))
+	data, err := serialize(agent.NewEvent(agent.AddOperation, podName))
 	if err != nil {
 		return err
 	}

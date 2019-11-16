@@ -1,3 +1,4 @@
+// Package signal provides helpers to setup signal handlers
 package signal
 
 import (
@@ -9,6 +10,7 @@ import (
 	"k8s.io/klog"
 )
 
+// SetupSignalHandler creates signal notification for os.Interrupt and syscall.SIGTERM signals
 func SetupSignalHandler(ctx context.Context) context.Context {
 	term := make(chan os.Signal)
 	signal.Notify(term, os.Interrupt, syscall.SIGTERM)
