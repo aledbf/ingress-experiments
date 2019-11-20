@@ -36,7 +36,7 @@ func main() {
 
 	etcdCfg := embetcd.NewConfig()
 
-	dir, err := ioutil.TempDir("", "example")
+	dir, err := ioutil.TempDir("", "etcd-")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -46,22 +46,12 @@ func main() {
 
 	etcdCfg.ClusterName = "ingress-controller"
 	etcdCfg.ClusterState = embed.ClusterStateFlagNew
-	etcdCfg.PeerTLSInfo = transport.TLSInfo{
-		//CertFile: "localhost.crt",
-		//KeyFile:  "localhost.key",
-		//CAFile:   "rootCA.crt",
-		//ClientCertAuth: true,
-	}
+	etcdCfg.PeerTLSInfo = transport.TLSInfo{}
 
 	etcdCfg.LPUrls = []url.URL{{Scheme: "http", Host: fmt.Sprintf("0.0.0.0:%v", listenPeerPort)}}
 	etcdCfg.APUrls = []url.URL{{Scheme: "http", Host: fmt.Sprintf("127.0.0.1:%v", listenPeerPort)}}
 
-	etcdCfg.ClientTLSInfo = transport.TLSInfo{
-		//CertFile: "localhost.crt",
-		//KeyFile:  "localhost.key",
-		//CAFile:   "rootCA.crt",
-		//ClientCertAuth: true,
-	}
+	etcdCfg.ClientTLSInfo = transport.TLSInfo{}
 
 	etcdCfg.LCUrls = []url.URL{{Scheme: "http", Host: fmt.Sprintf("0.0.0.0:%v", advertisePeerPort)}}
 	etcdCfg.ACUrls = []url.URL{{Scheme: "http", Host: fmt.Sprintf("127.0.0.1:%v", advertisePeerPort)}}

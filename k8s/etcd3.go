@@ -32,8 +32,7 @@ func init() {
 
 func main() {
 	etcdStorage, df, err := factory.Create(storagebackend.Config{
-		Paging: true,
-		Type:   "etcd3",
+		Type: storagebackend.StorageTypeETCD3,
 		Transport: storagebackend.TransportConfig{
 			ServerList: []string{"http://127.0.0.1:2470"},
 		},
@@ -87,7 +86,9 @@ func main() {
 			log.Printf("Event type: %T\n", next.Object)
 		}
 
-		log.Printf("Event: %v\n", wf.Data)
+		if wf != nil {
+			log.Printf("Event: %v\n", wf.Data)
+		}
 	}
 
 	log.Printf("done\n")

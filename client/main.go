@@ -10,9 +10,9 @@ import (
 
 	"github.com/coreos/etcd/clientv3"
 	cli "github.com/coreos/etcd/clientv3"
+	"github.com/coreos/etcd/etcdserver/api/v3rpc/rpctypes"
 	grpcprom "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/signalfx/embetcd/embetcd"
-	"go.etcd.io/etcd/etcdserver/api/v3rpc/rpctypes"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/grpclog"
 )
@@ -53,16 +53,11 @@ func main() {
 				switch err {
 				case context.Canceled:
 					log.Fatalf("ctx is canceled by another routine: %v", err)
-					//				case context.DeadlineExceeded:
-					//					log.Fatalf("ctx is attached with a deadline is exceeded: %v", err)
 				case rpctypes.ErrEmptyKey:
 					log.Fatalf("client-side error: %v", err)
-					//default:
-					//	log.Fatalf("bad cluster endpoints, which are not etcd servers: %v", err)
 				}
 			}
 
-			log.Println("PUT")
 			cancel()
 			time.Sleep(1 * time.Second)
 		}
@@ -76,12 +71,8 @@ func main() {
 				switch err {
 				case context.Canceled:
 					log.Fatalf("ctx is canceled by another routine: %v", err)
-					//				case context.DeadlineExceeded:
-					//					log.Fatalf("ctx is attached with a deadline is exceeded: %v", err)
 				case rpctypes.ErrEmptyKey:
 					log.Fatalf("client-side error: %v", err)
-					//default:
-					//log.Fatalf("bad cluster endpoints, which are not etcd servers: %v", err)
 				}
 			}
 
@@ -89,30 +80,25 @@ func main() {
 			time.Sleep(11 * time.Second)
 		}
 	}()
-	/*
-		go func() {
-			for {
-				log.Printf("Start watch")
-				watchChan := client.Watch(context.Background(), "demo", clientv3.WithProgressNotify())
-				for watchResp := range watchChan {
-					for _, watchEvent := range watchResp.Events {
-						k := string(watchEvent.Kv.Key)
-						v := string(watchEvent.Kv.Value)
-						version := watchEvent.Kv.Version
 
-						switch watchEvent.Type {
-						case mvccpb.PUT:
-							log.Printf("PUT: %v - %v (%v)", k, v, version)
-						case mvccpb.DELETE:
-							log.Printf("PUT: %v - %v", k, version)
-						}
-					}
+	go func() {
+		for {
+			log.Printf("Start watch")
+			watchChan := client.Watch(context.Background(), "/demo")
+			for watchResp := range watchChan {
+				for _, watchEvent := range watchResp.Events {
+					k := string(watchEvent.Kv.Key)
+					v := string(watchEvent.Kv.Value)
+					version := watchEvent.Kv.Version
+
+					log.Printf("%v: %v - %v (%v)", watchEvent.Type, k, v, version)
 				}
-
-				log.Printf("End watch")
 			}
-		}()
-	*/
+
+			log.Printf("End watch")
+		}
+	}()
+
 	term := make(chan os.Signal)
 	signal.Notify(term, os.Interrupt, syscall.SIGTERM)
 
@@ -123,6 +109,7 @@ func main() {
 			log.Println("Received SIGTERM, cancelling")
 			cancel()
 		case <-ctx.Done():
+			return
 		}
 	}()
 
