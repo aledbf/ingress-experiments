@@ -29,7 +29,7 @@ func NewClient(ctx context.Context, podName, podUUID, channel, url string, callb
 	disconnection := make(chan *time.Time)
 	client := sse.NewClient(fmt.Sprintf("%v?pod_name=%v&pod_uuid=%v", url, podName, podUUID))
 	client.SubscribeChan(channel, events)
-	client.ReconnectStrategy = backoff.NewConstantBackOff(2 * time.Second)
+	client.ReconnectStrategy = &backoff.ZeroBackOff{}
 
 	onDisconnect := func(c *sse.Client) {
 		t := time.Now()
