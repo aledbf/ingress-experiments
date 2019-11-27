@@ -25,12 +25,17 @@ type ConnectionCallbacks struct {
 
 // NewClient createa a new SSE connection to the ingress controller listening
 func NewClient(ctx context.Context, podName, podUUID, channel, url string, callbacks ConnectionCallbacks) *sse.Client {
-	events := make(chan *sse.Event)
-	disconnection := make(chan *time.Time)
 	client := sse.NewClient(fmt.Sprintf("%v?pod_name=%v&pod_uuid=%v", url, podName, podUUID))
-	client.SubscribeChan(channel, events)
-	client.ReconnectStrategy = &backoff.ZeroBackOff{}
+	// use a constant backoff to avoid increasing delay in reconnection if the
+	// server/s is/are down for more than two minutes.
+	client.ReconnectStrategy = backoff.NewConstantBackOff(2 * time.Second)
 
+	// subscribe a channel
+	events := make(chan *sse.Event)
+	client.SubscribeChan(channel, events)
+
+	// create a channel to measure the time the agent is disconnected
+	disconnection := make(chan *time.Time)
 	onDisconnect := func(c *sse.Client) {
 		t := time.Now()
 		disconnection <- &t
