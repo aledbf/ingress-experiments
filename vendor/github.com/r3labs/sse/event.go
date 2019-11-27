@@ -7,15 +7,18 @@ package sse
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"io"
+	"time"
 )
 
 // Event holds all of the event source fields
 type Event struct {
-	ID    []byte
-	Data  []byte
-	Event []byte
-	Retry []byte
+	ID        []byte
+	Data      []byte
+	Event     []byte
+	Retry     []byte
+	timestamp time.Time
 }
 
 // EventStreamReader scans an io.Reader looking for EventStream messages.
@@ -65,6 +68,9 @@ func (e *EventStreamReader) ReadEvent() ([]byte, error) {
 		return event, nil
 	}
 	if err := e.scanner.Err(); err != nil {
+		if err == context.Canceled {
+			return nil, io.EOF
+		}
 		return nil, err
 	}
 	return nil, io.EOF
