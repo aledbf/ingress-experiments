@@ -75,7 +75,6 @@ func newHTTPServer(port int, mux *http.ServeMux) *http.Server {
 		Handler:           mux,
 		ReadTimeout:       10 * time.Second,
 		ReadHeaderTimeout: 10 * time.Second,
-		WriteTimeout:      300 * time.Second,
 		IdleTimeout:       120 * time.Second,
 	}
 }
