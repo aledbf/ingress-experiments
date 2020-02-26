@@ -8,10 +8,10 @@ import (
 	"os"
 	"time"
 
+	"github.com/r3labs/sse"
 	"k8s.io/klog"
 
 	"github.com/aledbf/ingress-experiments/internal/pkg/signal"
-	"github.com/r3labs/sse"
 )
 
 const (

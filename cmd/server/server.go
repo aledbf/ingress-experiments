@@ -6,10 +6,11 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/aledbf/ingress-experiments/internal/pkg/agent"
 	"github.com/r3labs/sse"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/klog"
+
+	"github.com/aledbf/ingress-experiments/internal/pkg/agent"
 )
 
 // ClientInfo defines information related to the client
