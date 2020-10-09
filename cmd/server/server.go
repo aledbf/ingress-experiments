@@ -8,7 +8,7 @@ import (
 
 	"github.com/r3labs/sse"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 
 	"github.com/aledbf/ingress-experiments/internal/pkg/agent"
 )

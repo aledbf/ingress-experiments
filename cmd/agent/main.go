@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/r3labs/sse"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 
 	"github.com/aledbf/ingress-experiments/internal/pkg/agent"
 	"github.com/aledbf/ingress-experiments/internal/pkg/signal"

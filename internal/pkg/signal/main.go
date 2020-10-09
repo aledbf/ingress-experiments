@@ -7,7 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 // SetupSignalHandler creates signal notification for os.Interrupt and syscall.SIGTERM signals
